@@ -1,4 +1,4 @@
-# mqttsn12-client
+# mqttsn12-python3-client
 Python3 Client implementation of the Protocol MQTT-SN 1.2 (https://mqtt.org/mqtt-specification/ or https://groups.oasis-open.org/higherlogic/ws/public/document?document_id=66091).
 
 The library was tested with EMQX (https://www.emqx.com/en) and Hive MQ Edge (https://www.hivemq.com/products/hivemq-edge/).
