@@ -3,6 +3,19 @@ Python3 Client implementation of the Protocol MQTT-SN 1.2 (https://mqtt.org/mqtt
 
 The library was tested with EMQX (https://www.emqx.com/en) and Hive MQ Edge (https://www.hivemq.com/products/hivemq-edge/).
 
+Below you can find the code coverage:
+| Name                                     |    Stmts |     Miss |   Cover |
+|----------------------------------------- | -------: | -------: | ------: |
+| mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
+| mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
+| mqttsn12/client/MqttSnClient.py          |      674 |      255 |     62% |
+| mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
+| mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
+| mqttsn12/packets.py                      |      857 |      322 |     62% |
+| tests/unit\_test\_publisher.py           |       95 |        1 |     99% |
+| tests/unit\_test\_subscriber.py          |      209 |       17 |     92% |
+|                                **TOTAL** | **1908** |  **603** | **68%** |
+
 Below you can find the list of the Message Type implemented:
 
 |MsgType|Field|Status|Note|
