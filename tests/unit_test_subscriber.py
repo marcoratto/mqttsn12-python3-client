@@ -85,6 +85,63 @@ class UnitTest(unittest.TestCase):
 
         self.mqttsn_client = MqttSnClient()
 
+    def test_unsubcribe_normal_topic(self):
+        global keep_running
+        global actual
+        print("test_unsubcribe_normal_topic")
+        
+        myListener = MyListener()
+        
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_subscribe("mqttsn/test/unsubcribe_normal_topic", 
+                        MqttSnConstants.QOS_0, 
+                        myListener);
+
+        time.sleep(1)
+                        
+        self.mqttsn_client.send_unsubscribe("mqttsn/test/unsubcribe_normal_topic")
+            
+        self.mqttsn_client.send_disconnect(0)
+
+    def test_unsubcribe_short_topic(self):
+        global keep_running
+        global actual
+        print("test_unsubcribe_short_topic")
+        
+        myListener = MyListener()
+        
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_subscribe("AA", 
+                        MqttSnConstants.QOS_0, 
+                        myListener);
+
+        time.sleep(1)
+                        
+        self.mqttsn_client.send_unsubscribe("AA")
+            
+        self.mqttsn_client.send_disconnect(0)
+
+    def test_unsubcribe_predefined_topic(self):
+        global keep_running
+        global actual
+        print("test_unsubcribe_predefined_topic")
+        
+        myListener = MyListener()
+        
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_subscribe_predefined(2, 
+                        MqttSnConstants.QOS_N1, 
+                        myListener);
+
+        time.sleep(1)
+                        
+        self.mqttsn_client.send_unsubscribe_predefined(2)
+            
+        self.mqttsn_client.send_disconnect(0)
+                        
     def tearDown(self):
         self.mqttsn_client.close()
       

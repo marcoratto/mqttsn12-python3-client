@@ -3,18 +3,20 @@ Python3 Client implementation of the Protocol MQTT-SN 1.2 (https://mqtt.org/mqtt
 
 The library was tested with EMQX (https://www.emqx.com/en) and Hive MQ Edge (https://www.hivemq.com/products/hivemq-edge/).
 
+Start from this url http://www.steves-internet-guide.com/mqtt-sn/ for understanding more about the protocol MQTT-SN.
+
 Below you can find the code coverage:
-| Name                                     |    Stmts |     Miss |   Cover |
-|----------------------------------------- | -------: | -------: | ------: |
-| mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
-| mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
-| mqttsn12/client/MqttSnClient.py          |      674 |      255 |     62% |
-| mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
-| mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
-| mqttsn12/packets.py                      |      857 |      322 |     62% |
-| tests/unit\_test\_publisher.py           |       95 |        1 |     99% |
-| tests/unit\_test\_subscriber.py          |      209 |       17 |     92% |
-|                                **TOTAL** | **1908** |  **603** | **68%** |
+| Name                                         |    Stmts |     Miss |   Cover |
+|--------------------------------------------- | -------: | -------: | ------: |
+| src/mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
+| src/mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
+| src/mqttsn12/client/MqttSnClient.py          |      623 |      132 |     79% |
+| src/mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
+| src/mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
+| src/mqttsn12/packets.py                      |      857 |      273 |     68% |
+| tests/unit\_test\_publisher.py               |      110 |        1 |     99% |
+| tests/unit\_test\_subscriber.py              |      236 |       17 |     93% |
+|                                    **TOTAL** | **1899** |  **431** | **77%** |
 
 Below you can find the list of the Message Type implemented:
 

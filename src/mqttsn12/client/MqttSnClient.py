@@ -89,7 +89,7 @@ class MqttSnClient:
     topic_map: Dict[int, str] = {}
     list_of_mqtt_sn_callback: Dict[str, MqttSnListener] = {}
         
-    def _init__(self):
+    def __init__(self):
         self.port = MqttSnConstants.DEFAULT_PORT
         self.timeout = MqttSnConstants.DEFAULT_TIMEOUT
         self.keep_alive = MqttSnConstants.DEFAULT_KEEP_ALIVE
@@ -296,82 +296,7 @@ class MqttSnClient:
         
         if will_topic_res_packet.get_return_code() > 0:
             raise MqttSnClientException(f"WILLTOPICRESP error: {self.decode_return_code(will_topic_res_packet.get_return_code())}")
-    
-    def send_connect(self) -> None:
-        """Send CONNECT packet"""
-        connect_packet = ConnectPacket()
-        
-        flags = 0
-        if self.clean_session:
-            flags += MqttSnConstants.FLAG_CLEAN
-        if self.will_topic is not None and self.will_message is not None:
-            flags += MqttSnConstants.FLAG_WILL
-        
-        connect_packet.set_flags(flags)
-        connect_packet.set_protocol_id(MqttSnConstants.PROTOCOL_ID)
-        connect_packet.set_duration(self.keep_alive)
-        connect_packet.set_client_id(self.client_id)
-        
-        self.send_packet(connect_packet.encode())
-        
-        if self.will_topic is not None and self.will_message is not None:
-            self.logger.debug("LWT enabled.")
-            self.handle_will_negotiation()
-        
-        response = self.receive_packet(True)
-        if response is None:
-            raise MqttSnClientException("Failed to connect to MQTT-SN gateway.")
-        
-        connack_packet = ConnackPacket()
-        connack_packet.decode(response)
-        
-        if connack_packet.get_type() != MqttSnConstants.TYPE_CONNACK:
-            raise MqttSnClientException(f"Was expecting CONNACK packet but received: {self.decode_type(connack_packet.get_type())}")
-        
-        self.logger.debug(f"CONNACK return code: {self.decode_return_code(connack_packet.get_return_code())}")
-        
-        if connack_packet.get_return_code() > 0:
-            raise MqttSnClientException(f"CONNECT error: {self.decode_return_code(connack_packet.get_return_code())}")
-    
-    def handle_will_negotiation(self) -> None:
-        """Handle will topic and message negotiation during connect"""
-        # Handle WILLTOPICREQ
-        response = self.receive_packet(True)
-        if response is None:
-            raise MqttSnClientException("Failed to connect to MQTT-SN gateway.")
-        
-        will_topic_req_packet = WillTopicReqPacket()
-        will_topic_req_packet.decode(response)
-        
-        if will_topic_req_packet.get_type() != MqttSnConstants.TYPE_WILLTOPICREQ:
-            raise MqttSnClientException(f"Was expecting WILLTOPICREQ packet but received: {self.decode_type(will_topic_req_packet.get_type())}")
-        
-        will_topic_packet = WillTopicPacket()
-        flags = 0
-        if self.will_retain:
-            flags += MqttSnConstants.FLAG_RETAIN
-        flags |= self.get_qos_flag(self.will_qos)
-        
-        will_topic_packet.set_topic_name(self.will_topic)
-        will_topic_packet.set_flags(flags)
-        
-        self.send_packet(will_topic_packet.encode())
-        
-        # Handle WILLMSGREQ
-        response = self.receive_packet(True)
-        if response is None:
-            raise MqttSnClientException("Failed to connect to MQTT-SN gateway.")
-        
-        will_message_req_packet = WillMessageReqPacket()
-        will_message_req_packet.decode(response)
-        
-        if will_message_req_packet.get_type() != MqttSnConstants.TYPE_WILLMSGREQ:
-            raise MqttSnClientException(f"Was expecting WILLMSGREQ packet but received: {self.decode_type(will_message_req_packet.get_type())}")
-        
-        will_message_packet = WillMessagePacket()
-        will_message_packet.set_message(self.will_message)
-        self.send_packet(will_message_packet.encode())
-    
+          
     def send_disconnect(self, duration: int = 0) -> None:
         """Send DISCONNECT packet"""
         disconnect_req_packet = DisconnectReqPacket()

@@ -65,6 +65,31 @@ class UnitTest(unittest.TestCase):
     def tearDown(self):
         self.mqttsn_client.close()
 
+    def test_search_gateway(self):
+        print("test_search_gateway")
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_search_gateway(1);
+
+        time.sleep(1)
+
+        self.mqttsn_client.send_disconnect(0)
+        
+    def test_register(self):
+        print("test_register")
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        topic_id = self.mqttsn_client.send_register("mqttsn/test/register");
+
+        self.mqttsn_client.send_publish_short(topic_id, 
+                        "test_register", 
+                        MqttSnConstants.QOS_0, 
+                        False);
+
+        time.sleep(1)
+
+        self.mqttsn_client.send_disconnect(0)
+
     def test_custom_client_id(self):
         print("test_pub_qos0")
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
