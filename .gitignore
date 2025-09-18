@@ -3,3 +3,5 @@ dist/
 __pycache__/
 src/mqttsn12/client/__pycache__/
 src/mqttsn12/__pycache__/
+tests/__pycache__
+.tox/
