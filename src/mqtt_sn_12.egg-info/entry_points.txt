@@ -1,3 +1,0 @@
-[console_scripts]
-mqtt_sn_pub = mqttsn12.mqtt_sn_pub:main
-mqtt_sn_sub = mqttsn12.mqtt_sn_sub:main
