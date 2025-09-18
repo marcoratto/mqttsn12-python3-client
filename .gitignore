@@ -1,2 +1,5 @@
 env/
 dist/
+__pycache__/
+src/mqttsn12/client/__pycache__/
+src/mqttsn12/__pycache__/
