@@ -5,6 +5,8 @@ The library was tested with EMQX (https://www.emqx.com/en) and Hive MQ Edge (htt
 
 Start from this url http://www.steves-internet-guide.com/mqtt-sn/ for understanding more about the protocol MQTT-SN.
 
+The whole project is available on https://github.com/marcoratto/mqttsn12-python3-client
+
 Below you can find the code coverage:
 | Name                                         |    Stmts |     Miss |   Cover |
 |--------------------------------------------- | -------: | -------: | ------: |
