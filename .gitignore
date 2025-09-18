@@ -3,5 +3,7 @@ dist/
 __pycache__/
 src/mqttsn12/client/__pycache__/
 src/mqttsn12/__pycache__/
-tests/__pycache__
+tests/__pycache__/
 .tox/
+src/mqtt_sn_12.egg-info/
+src/mqttsn12/.DS_Store
