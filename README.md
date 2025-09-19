@@ -7,18 +7,115 @@ Start from this url http://www.steves-internet-guide.com/mqtt-sn/ for understand
 
 The whole project is available on https://github.com/marcoratto/mqttsn12-python3-client
 
-Below you can find the code coverage:
+## Use
+
+Along with the library, two command-line tools are provided: **mqtt_sn_pub** and **mqtt_sn_sub**
+
+Create a Python environment
+`python -m venv env`
+
+Enable the new Python environment
+`source env/bin/activate`
+
+Install the library
+`pip install mqtt-sn-12`
+
+Execute the publisher client tool
+`mqtt_sn_pub`
+
+Execute the subscriber client tool
+`mqtt_sn_sub`
+
+## mqtt_sn_pub 
+usage: mqtt-sn-pub [opts] -t <topic> -m <message>
+
+MQTT-SN publisher in Python
+
+options:
+  -t, --topic TOPIC     MQTT-SN topic name to publish to
+  -m, --message MESSAGE
+                        Message payload to send
+  -d, --enable-debug    Enable debug messages
+  -c, --disable-clean-session
+                        Disable clean session / enable persistent client mode
+  -f, --file FILE       A file to send as the message payload
+  -h, --host HOST       MQTT-SN host to connect to (default: 127.0.0.1)
+  -i, --clientid CLIENTID
+                        Client ID to use. Defaults to 'mqtt-sn-python-' + pid
+  -I, --id-prefix       Define client id as prefix + pid (useful with broker clientid_prefixes)
+  -k, --keepalive KEEPALIVE
+                        Keep alive in seconds (default: 30)
+  -e, --sleep SLEEP     Sleep duration in seconds when disconnecting (default: 0)
+  -l, --line-mode       Read messages from stdin, sending a separate message for each line
+  -n, --null-message    Send a null (zero length) message
+  -p, --port PORT       Network port (default: 2442)
+  -q, --qos {-1,0,1}    Quality of Service (-1, 0, 1). Default: 0
+  -r, --retain          Mark the message as retained
+  -s, --stdin-message   Read one whole message from STDIN
+  -T, --topicid TOPICID
+                        Pre-defined MQTT-SN topic ID to publish to
+  --timeout TIMEOUT     Timeout (default: 60)
+  --will-payload WILL_PAYLOAD
+                        Payload for the client Will
+  --will-qos {-1,0,1}   QoS level for the client Will. Default: 0
+  --will-retain         Make the client Will retained
+  --will-topic WILL_TOPIC
+                        The topic on which to publish the client Will
+  --repeat REPEAT       Repeat publish N times (default: 1)
+  --repeat-delay REPEAT_DELAY
+                        Delay in seconds between repeats (default: 0)
+
+## mqtt_sn_sub
+
+usage: mqtt-sn-pub [opts] -t <topic> -m <message>
+
+MQTT-SN publisher in Python
+
+options:
+  -t, --topic TOPIC     MQTT-SN topic name to publish to
+  -d, --enable-debug    Enable debug messages
+  -c, --disable-clean-session
+                        Disable clean session / enable persistent client mode
+  -h, --host HOST       MQTT-SN host to connect to (default: 127.0.0.1)
+  -i, --clientid CLIENTID
+                        Client ID to use. Defaults to 'mqtt-sn-python-' + pid
+  -I, --id-prefix       Define client id as prefix + pid (useful with broker clientid_prefixes)
+  -k, --keepalive KEEPALIVE
+                        Keep alive in seconds (default: 30)
+  -e, --sleep SLEEP     Sleep duration in seconds when disconnecting (default: 0)
+  -p, --port PORT       Network port (default: 2442)
+  -C, --msg-count MSG_COUNT
+                        disconnect and exit after receiving the 'msg_count' messages.
+  -1, --one             exit after receiving a single message.
+  -q, --qos {-1,0,1}    Quality of Service (-1, 0, 1). Default: 0
+  -s, --stdin-message   Read one whole message from STDIN
+  -T, --topicid TOPICID
+                        Pre-defined MQTT-SN topic ID to publish to
+  --timeout TIMEOUT     Timeout (default: 60)
+  --will-payload WILL_PAYLOAD
+                        Payload for the client Will
+  --will-qos {-1,0,1}   QoS level for the client Will. Default: 0
+  --will-retain         Make the client Will retained
+  --will-topic WILL_TOPIC
+                        The topic on which to publish the client Will`
+
+## Code Coverage
+
+The following table summarizes the code coverage of the library:
+
 | Name                                         |    Stmts |     Miss |   Cover |
 |--------------------------------------------- | -------: | -------: | ------: |
 | src/mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
 | src/mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
-| src/mqttsn12/client/MqttSnClient.py          |      623 |      132 |     79% |
+| src/mqttsn12/client/MqttSnClient.py          |      625 |      121 |     81% |
 | src/mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
 | src/mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
-| src/mqttsn12/packets.py                      |      857 |      273 |     68% |
+| src/mqttsn12/packets.py                      |      857 |      264 |     69% |
 | tests/unit\_test\_publisher.py               |      110 |        1 |     99% |
-| tests/unit\_test\_subscriber.py              |      236 |       17 |     93% |
-|                                    **TOTAL** | **1899** |  **431** | **77%** |
+| tests/unit\_test\_subscriber.py              |      262 |       19 |     93% |
+|                                    **TOTAL** | **1927** |  **413** | **79%** |
+
+## Message Types
 
 Below you can find the list of the Message Type implemented:
 

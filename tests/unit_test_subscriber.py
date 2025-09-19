@@ -419,6 +419,49 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_disconnect(0)
 
         assert actual == expected, f"actual={actual!r} non corrisponde"
+
+    def test_ping(self):
+        global keep_running
+        global actual
+        print("test_ping")
+        
+        keepalive = 5
+        
+        myListener = MyListener()
+        
+        self.mqttsn_client.set_keep_alive(keepalive)
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_subscribe("mqttsn/test/ping", 
+                        MqttSnConstants.QOS_0, 
+                        myListener);
+
+        self.mqttc.loop_start()
+        
+        expected = "test_ping"
+        start = time.time()
+        published = False
+    
+        try:
+            while keep_running:
+                self.mqttsn_client.polling()
+                time.sleep(1)
+                elapsed = time.time() - start
+                
+                # quando è passato almeno un intervallo di keepalive,
+                # presupponiamo che ci sia stato lo scambio PINGREQ/PINGRESP
+                if not published and elapsed > keepalive+1:
+                    published = True                
+                    self.mqttc.publish("mqttsn/test/ping", expected, qos=0, retain=False)
+                
+        except MqttSnClientException as e:
+            print(e)
+            
+        self.mqttc.disconnect()
+        self.mqttc.loop_stop()
+        self.mqttsn_client.send_disconnect(0)
+
+        assert actual == expected, f"actual={actual!r} non corrisponde"
                                                         
 if __name__ == '__main__':
     unittest.main()

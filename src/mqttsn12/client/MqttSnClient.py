@@ -727,13 +727,13 @@ class MqttSnClient:
         
         while running:
             now = int(time.time())
-            #self.logger.debug(f"Waiting {now}...")
+            # self.logger.debug(f"Waiting {now}...")
             
             # Time to send a ping?
             if self.keep_alive > 0 and self.last_transmit > 0 and ((now - self.last_transmit) >= self.keep_alive):
                 self.logger.debug("Time to send a PING")
-                self.send_ping_req()
-            
+                self.send_ping_req()                
+                
             buf = self.receive_packet(blocking)
             if buf is not None:
                 if buf[0] == 1:
@@ -758,6 +758,8 @@ class MqttSnClient:
                 if msg_type == msg_type:
                     return buf
             
+            if blocking == False:
+                running = False
             # Check for receive timeout
             #if self.keep_alive > 0 and self.last_receive > 0 and (now - self.last_receive) >= (self.keep_alive * 1.5):
             #    self.logger.warning("Keep alive error: timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
