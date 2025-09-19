@@ -29,7 +29,7 @@ Execute the subscriber client tool
 ## mqtt_sn_pub 
 
 ```
-usage: mqtt-sn-pub [opts] -t <topic> -m <message>
+usage: mqtt_sn_pub [opts] -t <topic> -m <message>
 
 MQTT-SN publisher in Python
 
@@ -71,7 +71,7 @@ options:
 ## mqtt_sn_sub
 
 ```
-usage: mqtt-sn-pub [opts] -t <topic> -m <message>
+usage: mqtt_sn_pub [opts] -t <topic> -m <message>
 
 MQTT-SN publisher in Python
 
