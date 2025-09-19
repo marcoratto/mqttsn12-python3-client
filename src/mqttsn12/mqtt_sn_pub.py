@@ -38,8 +38,8 @@ logging.basicConfig(
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog="mqtt-sn-pub",
-        usage="mqtt-sn-pub [opts] -t <topic> -m <message>",
+        prog="mqtt_sn_pub",
+        usage="mqtt_sn_pub [opts] -t <topic> -m <message>",
         description="MQTT-SN publisher in Python",
         add_help=False  # disabilito l'help automatico
     )

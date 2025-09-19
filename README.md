@@ -27,6 +27,8 @@ Execute the subscriber client tool
 `mqtt_sn_sub`
 
 ## mqtt_sn_pub 
+
+```
 usage: mqtt-sn-pub [opts] -t <topic> -m <message>
 
 MQTT-SN publisher in Python
@@ -64,9 +66,11 @@ options:
   --repeat REPEAT       Repeat publish N times (default: 1)
   --repeat-delay REPEAT_DELAY
                         Delay in seconds between repeats (default: 0)
+``` 
 
 ## mqtt_sn_sub
 
+```
 usage: mqtt-sn-pub [opts] -t <topic> -m <message>
 
 MQTT-SN publisher in Python
@@ -97,7 +101,8 @@ options:
   --will-qos {-1,0,1}   QoS level for the client Will. Default: 0
   --will-retain         Make the client Will retained
   --will-topic WILL_TOPIC
-                        The topic on which to publish the client Will`
+                        The topic on which to publish the client Will
+``` 
 
 ## Code Coverage
 
