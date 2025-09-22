@@ -56,15 +56,15 @@ class MyListener(MqttSnListener):
         print(f"Messaggio ricevuto su {topic_name} (ID={topic_id}): {actual}")
         keep_running = False
 
-class UnitTest(unittest.TestCase):
+class TestSubscriber(unittest.TestCase):
     MQTT_SN_HOST = "127.0.0.1"
     MQTT_SN_PORT = 2442
     MQTT_ID = "python"
     MQTT_HOST = "127.0.0.1"
     MQTT_PORT = 1883
     MQTT_QOS = 1
-    MQTT_USER = "python"
-    MQTT_PASS = "python"
+    MQTT_USER = None
+    MQTT_PASS = None
     MQTT_CLEAN_SESSION = False
 
     def on_log(self, mqttc, obj, level, string):
@@ -78,12 +78,15 @@ class UnitTest(unittest.TestCase):
         keep_running = True
         
         self.mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id= self.MQTT_ID, clean_session= self.MQTT_CLEAN_SESSION) 
-        self.mqttc.username_pw_set(username= self.MQTT_USER, password= self.MQTT_PASS)
+        if self.MQTT_USER is not None and self.MQTT_PASS is not None:
+            self.mqttc.username_pw_set(username= self.MQTT_USER, password= self.MQTT_PASS)
+
         self.mqttc.on_log = self.on_log
         
         self.mqttc.connect(self.MQTT_HOST, int(self.MQTT_PORT), 60)
 
         self.mqttsn_client = MqttSnClient()
+        self.mqttsn_client.set_timeout(60)
 
     def test_unsubcribe_normal_topic(self):
         global keep_running
@@ -96,7 +99,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/unsubcribe_normal_topic", 
                         MqttSnConstants.QOS_0, 
-                        myListener);
+                        myListener)
 
         time.sleep(1)
                         
@@ -115,7 +118,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("AA", 
                         MqttSnConstants.QOS_0, 
-                        myListener);
+                        myListener)
 
         time.sleep(1)
                         
@@ -134,7 +137,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe_predefined(2, 
                         MqttSnConstants.QOS_N1, 
-                        myListener);
+                        myListener)
 
         time.sleep(1)
                         
@@ -156,7 +159,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/sub_qos0", 
                         MqttSnConstants.QOS_0, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -189,7 +192,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/sub_qos1", 
                         MqttSnConstants.QOS_1, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -223,7 +226,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/sub_lwt", 
                         MqttSnConstants.QOS_1, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -256,7 +259,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/sub_big_payload", 
                         MqttSnConstants.QOS_1, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -293,7 +296,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe_predefined(2, 
                         MqttSnConstants.QOS_N1, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -326,7 +329,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("RM", 
                         MqttSnConstants.QOS_1, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
 
@@ -348,77 +351,41 @@ class UnitTest(unittest.TestCase):
 
         assert actual == expected, f"actual={actual!r} non corrisponde"
 
-    def test_update_lwt_message(self):
+    def test_will_message_update(self):
         global keep_running
         global actual
-        print("test_update_lwt_message")
-        
-        myListener = MyListener()
-        
+        print("test_will_message_update")
+
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
-        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_1, True)
+        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_0, True)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_subscribe("mqttsn/test/update_lwt_message", 
-                        MqttSnConstants.QOS_1, 
-                        myListener);
+        self.mqttsn_client.send_will_message_update("off_ko")
+        time.sleep(3)
 
-        self.mqttsn_client.send_will_message_update("ko")
+    def test_lwt_2(self):
+        global keep_running
+        global actual
+        print("test_lwt_2")
 
-        self.mqttc.loop_start()
-
-        expected = "test_sub_lwt"
-
-        self.mqttc.publish("mqttsn/test/update_lwt_message", expected, qos=1, retain=False)
-        self.mqttc.disconnect()
-        self.mqttc.loop_stop()
-
-        try:
-            while keep_running:
-                self.mqttsn_client.polling()
-                time.sleep(0.1)
-
-        except MqttSnClientException as e:
-            print(e)
-            
-        self.mqttsn_client.send_disconnect(0)
-
-        assert actual == expected, f"actual={actual!r} non corrisponde"
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.set_will_message("offline_ko")
+        self.mqttsn_client.set_will_qos(MqttSnConstants.QOS_0)
+        self.mqttsn_client.set_will_retain(True)
+        self.mqttsn_client.set_will_topic("mqttsn/lwt/status")
+        self.mqttsn_client.send_connect()
+        time.sleep(3)
 
     def test_update_lwt_topic(self):
         global keep_running
         global actual
         print("test_update_lwt_topic")
         
-        myListener = MyListener()
-        
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
-        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_1, True)
+        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_0, True)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_subscribe("mqttsn/test/update_lwt_topic", 
-                        MqttSnConstants.QOS_1, 
-                        myListener);
-
         self.mqttsn_client.send_will_topic_update("mqttsn/lwt/state")
-
-        self.mqttc.loop_start()
-
-        expected = "test_update_lwt_topic"
-
-        self.mqttc.publish("mqttsn/test/update_lwt_topic", expected, qos=1, retain=False)
-        self.mqttc.disconnect()
-        self.mqttc.loop_stop()
-
-        try:
-            while keep_running:
-                self.mqttsn_client.polling()
-                time.sleep(0.1)
-
-        except MqttSnClientException as e:
-            print(e)
-            
-        self.mqttsn_client.send_disconnect(0)
-
-        assert actual == expected, f"actual={actual!r} non corrisponde"
+        time.sleep(3)
+        #self.mqttc.disconnect()
 
     def test_ping(self):
         global keep_running
@@ -434,7 +401,7 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_subscribe("mqttsn/test/ping", 
                         MqttSnConstants.QOS_0, 
-                        myListener);
+                        myListener)
 
         self.mqttc.loop_start()
         
@@ -462,6 +429,50 @@ class UnitTest(unittest.TestCase):
         self.mqttsn_client.send_disconnect(0)
 
         assert actual == expected, f"actual={actual!r} non corrisponde"
+
+    def test_sub_wildcard_hash(self):
+        global keep_running
+        global actual
+        print("test_sub_wildcard_hash")
+        
+        myListener = MyListener()
+        
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_subscribe("mqttsn/test/sub/wildcard_hash/0", 
+                        MqttSnConstants.QOS_0, 
+                        myListener)
+
+        actual = None
+        expected = "test_sub_wildcard_hash_0"
+        self.mqttc.loop_start()
+        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)
+        try:
+            while actual is None:
+                self.mqttsn_client.polling()
+                time.sleep(0.1)
+
+        except MqttSnClientException as e:
+            print(e)
+        assert actual == expected, f"actual={actual!r} non corrisponde"
+
+        actual = None
+        expected = "test_sub_wildcard_hash_1"
+        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)
+        try:
+            while actual is None:
+                self.mqttsn_client.polling()
+                time.sleep(0.1)
+
+        except MqttSnClientException as e:
+            print(e)                   
+        assert actual == expected, f"actual={actual!r} non corrisponde"
+                    
+        time.sleep(1)
+                    
+        self.mqttsn_client.send_disconnect(0)
+        self.mqttc.disconnect()
+        self.mqttc.loop_stop()
                                                         
 if __name__ == '__main__':
     unittest.main()

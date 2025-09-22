@@ -533,9 +533,12 @@ class MqttSnClient:
         self.send_regack(topic_id, message_id)
     
     def send_regack(self, topic_id: int, message_id: int) -> None:
-        """Send REGACK packet"""
-        regack_packet = RegackPacket
-
+        regack_packet = RegackPacket()
+        regack_packet.set_message_id(message_id)
+        regack_packet.set_return_code(0)
+        regack_packet.set_topic_id(topic_id)
+        self.send_packet(regack_packet.encode())
+        
     def send_connect(self):
         connect_packet = ConnectPacket()
         
@@ -720,10 +723,10 @@ class MqttSnClient:
             return str(return_code)
 
     def wait_for(self, blocking, msg_type):
-        self.logger.debug("Expecting '" + self.decode_type(msg_type) + "' message")
         started_waiting = int(time.time())
         
         running = True
+        tmp_msg_type = None
         
         while running:
             now = int(time.time())
@@ -735,29 +738,30 @@ class MqttSnClient:
                 self.send_ping_req()                
                 
             buf = self.receive_packet(blocking)
-            if buf is not None:
-                if buf[0] == 1:
-                    msg_type = buf[3]
-                    self.logger.debug(f"Received {self.decode_type(buf[3])} packet...")
-                else:
-                    msg_type = buf[1]
-                    self.logger.debug(f"Received {self.decode_type(buf[1])} packet...") 
+            if buf is None:
+                return None
                 
-                if msg_type == MqttSnConstants.TYPE_REGISTER:
-                    self.process_register(buf)
-                elif msg_type == MqttSnConstants.TYPE_ADVERTISE:
-                    running = False
-                elif msg_type == MqttSnConstants.TYPE_DISCONNECT:
-                    if msg_type != MqttSnConstants.TYPE_DISCONNECT:
-                        raise MqttSnClientException("Received DISCONNECT from gateway.")
-                else:
-                    if msg_type != msg_type:
-                        self.logger.warning("Was expecting '" + self.decode_type(msg_type) + "' packet but received: " + self.decode_type(msg_type))
-                
-                # Did we find what we were looking for?
-                if msg_type == msg_type:
-                    return buf
+            if buf[0] == 1:
+                tmp_msg_type = buf[3]
+                self.logger.debug(f"Received {self.decode_type(tmp_msg_type)} packet...")
+            else:
+                tmp_msg_type = buf[1]
+                self.logger.debug(f"Received {self.decode_type(tmp_msg_type)} packet...") 
             
+            # Did we find what we were looking for?
+            if tmp_msg_type == msg_type:
+                return buf
+            elif tmp_msg_type == MqttSnConstants.TYPE_REGISTER:
+                self.process_register(buf)
+            elif tmp_msg_type == MqttSnConstants.TYPE_ADVERTISE:
+                running = False
+            elif tmp_msg_type == MqttSnConstants.TYPE_DISCONNECT:
+                self.logger.debug("Received DISCONNECT from gateway.") 
+            else:
+                if tmp_msg_type != msg_type:
+                    self.logger.warning("Was expecting '" + self.decode_type(msg_type) + "' packet but received: " + self.decode_type(msg_type))
+            
+            # Waiting or not ?            
             if blocking == False:
                 running = False
             # Check for receive timeout
@@ -769,8 +773,10 @@ class MqttSnClient:
             #if (now - started_waiting) >= self.timeout:
             #    self.logger.warning("Timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
             #    break
-        
-        return None
+        if tmp_msg_type == msg_type:
+            return buf            
+        else:
+            return None
         
     def receive_packet_async(self):
         response = None

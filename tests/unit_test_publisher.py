@@ -45,7 +45,7 @@ console_handler.setFormatter(formatter)
 
 logger.addHandler(console_handler)
 
-class UnitTest(unittest.TestCase):
+class TestPublisher(unittest.TestCase):
     MQTT_SN_HOST = "127.0.0.1"
     MQTT_SN_PORT = 2442
     MQTT_ID = "python"
@@ -58,9 +58,13 @@ class UnitTest(unittest.TestCase):
     
     def setUp(self):
         self.mqttc = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id= self.MQTT_ID, clean_session= self.MQTT_CLEAN_SESSION) 
-        self.mqttc.username_pw_set(username= self.MQTT_USER, password= self.MQTT_PASS)
-
+        
+        if self.MQTT_USER is not None and self.MQTT_PASS is not None:
+            self.mqttc.username_pw_set(username= self.MQTT_USER, password= self.MQTT_PASS)
+            
         self.mqttsn_client = MqttSnClient()
+        self.mqttsn_client.set_client_id(None)
+        self.mqttsn_client.set_clean_session(True)
 
     def tearDown(self):
         self.mqttsn_client.close()
