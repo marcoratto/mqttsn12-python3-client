@@ -112,13 +112,13 @@ The following table summarizes the code coverage of the library:
 |--------------------------------------------- | -------: | -------: | ------: |
 | src/mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
 | src/mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
-| src/mqttsn12/client/MqttSnClient.py          |      631 |      127 |     80% |
+| src/mqttsn12/client/MqttSnClient.py          |      646 |      106 |     84% |
 | src/mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
 | src/mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
-| src/mqttsn12/packets.py                      |      857 |      264 |     69% |
+| src/mqttsn12/packets.py                      |      857 |      249 |     71% |
 | tests/unit\_test\_publisher.py               |      113 |        1 |     99% |
-| tests/unit\_test\_subscriber.py              |      276 |       20 |     93% |
-|                                    **TOTAL** | **1950** |  **420** | **78%** |
+| tests/unit\_test\_subscriber.py              |      280 |       20 |     93% |
+|                                    **TOTAL** | **1969** |  **384** | **80%** |
 
 ## Message Types
 

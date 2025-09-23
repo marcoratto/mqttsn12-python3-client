@@ -439,7 +439,7 @@ class TestSubscriber(unittest.TestCase):
         
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_subscribe("mqttsn/test/sub/wildcard_hash/0", 
+        self.mqttsn_client.send_subscribe("mqttsn/test/sub/wildcard_hash/#", 
                         MqttSnConstants.QOS_0, 
                         myListener)
 
@@ -447,6 +447,10 @@ class TestSubscriber(unittest.TestCase):
         expected = "test_sub_wildcard_hash_0"
         self.mqttc.loop_start()
         self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)
+        
+        self.mqttsn_client.polling()
+        
+        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)        
         try:
             while actual is None:
                 self.mqttsn_client.polling()
@@ -458,7 +462,11 @@ class TestSubscriber(unittest.TestCase):
 
         actual = None
         expected = "test_sub_wildcard_hash_1"
-        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)
+        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/1", expected, qos=1, retain=False)
+        
+        self.mqttsn_client.polling()
+        
+        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/1", expected, qos=1, retain=False)
         try:
             while actual is None:
                 self.mqttsn_client.polling()

@@ -917,11 +917,37 @@ class MqttSnClient:
                 return key
         return None
     
-    def add_mqtt_sn_callback(self, topic, a_mqtt_sn_callback):
+    def add_mqtt_sn_callback(self, topic: int, a_mqtt_sn_callback):
         self.logger.debug("Store MqttSnCallback for topic " + topic)
         self.list_of_mqtt_sn_callback[topic] = a_mqtt_sn_callback
 
-    def add_mqtt_sn_callback(self, topic_id, a_mqtt_sn_callback):
+    def add_mqtt_sn_callback(self, topic_id: str, a_mqtt_sn_callback):
         self.logger.debug("Store MqttSnCallback for topic ID " + str(topic_id))
         self.list_of_mqtt_sn_callback[str(topic_id)] = a_mqtt_sn_callback
     
+    def is_matched(self, topic: str, topic_filter: str) -> bool:
+        """
+        Check if an MQTT topic matches a topic filter with wildcards (+, #).
+        """
+        topic_levels = topic.split('/')
+        filter_levels = topic_filter.split('/')
+
+        i = 0
+        while i < len(filter_levels):
+            f = filter_levels[i]
+
+            # wildcard "#": matches all remaining levels, must be last
+            if f == '#':
+                return i == len(filter_levels) - 1
+
+            # wildcard "+" matches exactly one level (even empty one)
+            if f == '+':
+                if len(topic_levels) <= i:
+                    return False
+            else:
+                # normal string, must match exactly
+                if len(topic_levels) <= i or topic_levels[i] != f:
+                    return False
+            i += 1
+
+        return len(topic_levels) == len(filter_levels)
