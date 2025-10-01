@@ -89,8 +89,8 @@ def parse_args():
                         action="store_true", default=False,
                         help="exit after receiving a single message.")    
     parser.add_argument("-q", "--qos",
-                        type=int, choices=[-1, 0, 1], default=0,
-                        help="Quality of Service (-1, 0, 1). Default: 0")
+                        type=int, choices=[0, 1], default=0, 
+                        help="Quality of Service (0, 1). Default: 0")
     parser.add_argument("-s", "--stdin-message",
                         action="store_true", default=False,
                         help="Read one whole message from STDIN")
@@ -154,11 +154,11 @@ def main():
     if args.will_topic:
         mqttsn_client.set_will_topic(args.will_topic)
     if args.will_payload:
-        mqttsn_client.set_will_topic(args.will_payload)
+        mqttsn_client.set_will_message(args.will_payload)
     if args.will_qos:
-        mqttsn_client.set_will_topic(args.will_qos)
+        mqttsn_client.set_will_qos(args.will_qos)
     if args.will_retain:
-        mqttsn_client.set_will_topic(args.will_retain)
+        mqttsn_client.set_will_retain(args.will_retain)
        
     mqttsn_client.open(args.host, args.port)
 

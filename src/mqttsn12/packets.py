@@ -28,7 +28,7 @@ from mqttsn12.client.MqttSnClientException import MqttSnClientException
 class AdvertisePacket:
     def __init__(self):
         self.length = 0
-        self.type = 0
+        self.type = MqttSnConstants.TYPE_ADVERTISE
         self.gwID = 0
         self.duration = 0
 
@@ -62,6 +62,14 @@ class ConnackPacket:
         self.length = value[0]
         self.type = value[1]
         self.return_code = value[2]
+
+    def encode(self):
+        self.length = 3
+        buffer = bytearray()            
+        buffer.append(self.length)
+        buffer.append(self.type)
+        buffer.append(self.return_code)            
+        return bytes(buffer)
     
     def get_length(self):
         return self.length
@@ -70,7 +78,10 @@ class ConnackPacket:
         return self.type
     
     def get_return_code(self):
-        return self.return_code
+        return self.return_code 
+      
+    def set_return_code(self, value):
+        self.return_code = value
 
 class ConnectPacket:
     
@@ -80,7 +91,7 @@ class ConnectPacket:
         self.flags = 0
         self.protocol_id = 0
         self.duration = 0
-        self.client_id = None
+        self.client_id = ""
     
     def encode(self):
         try:
@@ -98,14 +109,22 @@ class ConnectPacket:
             
         except Exception as e:
             raise MqttSnClientException(e)
-    
+
+    def decode(self, value: bytes):
+        self.length = value[0]
+        self.type = value[1]
+        self.flags = value[2]
+        self.protocol_id = value[3]
+        self.duration = struct.unpack('>H', value[4:6])[0]
+        self.client_id = value[6:].decode('utf-8', errors='ignore')
+            
     def get_length(self):
         return self.length
     
     def get_type(self):
         return self.type
     
-    def get_flags(self):
+    def get_flags(self) -> int:
         return self.flags
     
     def set_flags(self, flags):
@@ -127,10 +146,28 @@ class ConnectPacket:
         return self.client_id
     
     def set_client_id(self, value):
-        if value is not None and len(value.strip()) > MqttSnConstants.MAX_CLIENT_ID_LENGTH:
-            raise MqttSnClientException(f"Client ID '{value}' is too long (max {MqttSnConstants.MAX_CLIENT_ID_LENGTH})")
-        self.client_id = value.strip().encode('utf-8')
+        if value is None:
+            self.client_id = ""
+        else:
+            if len(value.strip()) > MqttSnConstants.MAX_CLIENT_ID_LENGTH:
+                raise MqttSnClientException(f"Client ID '{value}' is too long (max {MqttSnConstants.MAX_CLIENT_ID_LENGTH})")        
+            self.client_id = value.strip().encode('utf-8')
+        
+    def get_dup(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_DUP)
 
+    def get_qos(self) -> int:
+        return (self.flags & MqttSnConstants.FLAG_QOS_MASK) >> 5
+
+    def get_retain(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_RETAIN)
+
+    def get_will(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_WILL)
+
+    def get_clean_session(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_CLEAN)
+        
 class DisconnectReqPacket:
     
     def __init__(self):
@@ -174,17 +211,22 @@ class DisconnectResPacket:
     
     def __init__(self):
         self.length = 0
-        self.type = 0
+        self.type = MqttSnConstants.TYPE_DISCONNECT 
         self.duration = 0
     
     def encode(self):
         try:
-            if self.length == 4:
+            if self.duration == 0:
+                self.length = 0x02
+            else:
+                self.length = 0x04
+            
+            if self.duration > 0:
                 return struct.pack('>BBH', self.length, self.type, self.duration)
             else:
                 return struct.pack('>BB', self.length, self.type)
         except Exception as e:
-            raise MqttSnClientException(str(e))
+            raise Exception(str(e))
     
     def decode(self, value):
         self.length = struct.unpack_from('>B', value, 0)[0]
@@ -194,16 +236,10 @@ class DisconnectResPacket:
     
     def get_length(self):
         return self.length
-    
-    def set_length(self, length):
-        self.length = length
-    
+       
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
-    
+       
     def get_duration(self):
         return self.duration
     
@@ -339,8 +375,8 @@ class PubAckPacket:
 class PubCompPacket:
     
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.length = 6
+        self.type = MqttSnConstants.TYPE_PUBCOMP
         self.topic_id = 0
         self.message_id = 0
     
@@ -364,14 +400,8 @@ class PubCompPacket:
     def get_length(self):
         return self.length
     
-    def set_length(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
     
     def get_topic_id(self):
         return self.topic_id
@@ -484,7 +514,55 @@ class PublishPacket:
     
     def get_data(self):
         return self.data
-    
+        
+    def get_dup(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_DUP)
+
+    def get_qos(self) -> int:
+        return (self.flags & MqttSnConstants.FLAG_QOS_MASK) >> 5
+
+    def get_topic_type_id(self) -> int:
+        return (self.flags & 0x3)
+
+    def get_retain(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_RETAIN)
+
+    def set_retain(self, value: bool):
+        if value:
+            # accende il bit RETAIN
+            self.flags |= MqttSnConstants.FLAG_RETAIN
+        else:
+            # spegne il bit RETAIN
+            self.flags &= ~MqttSnConstants.FLAG_RETAIN
+
+    def set_dup(self, value: bool):
+        if value:
+            # accende il bit RETAIN
+            self.flags |= MqttSnConstants.FLAG_DUP
+        else:
+            # spegne il bit RETAIN
+            self.flags &= ~MqttSnConstants.FLAG_DUP
+
+    def set_qos(self, value: int):
+        if value not in (MqttSnConstants.QOS_0,
+                       MqttSnConstants.QOS_1,
+                       MqttSnConstants.QOS_2,
+                       MqttSnConstants.QOS_N1):
+            raise MqttSnClientException("QoS deve essere -1, 0, 1 o 2 per MQTT-SN")
+
+        # Azzeriamo i bit QoS
+        self.flags &= ~MqttSnConstants.FLAG_QOS_MASK
+
+        # Impostiamo il QoS corretto usando le costanti
+        if value == MqttSnConstants.QOS_0:
+            self.flags |= MqttSnConstants.FLAG_QOS_0
+        elif value == MqttSnConstants.QOS_1:
+            self.flags |= MqttSnConstants.FLAG_QOS_1
+        elif value == MqttSnConstants.QOS_2:
+            self.flags |= MqttSnConstants.FLAG_QOS_1
+        elif value == MqttSnConstants.QOS_N1:
+            self.flags |= MqttSnConstants.FLAG_QOS_N1
+                        
     def set_data(self, value):
         if isinstance(value, str):
             if value is not None and len(value.strip()) > MqttSnConstants.MAX_PAYLOAD_LENGTH_EXTENDED:
@@ -501,8 +579,8 @@ class PublishPacket:
 
 class PubRecPacket:
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.length = 6
+        self.type = MqttSnConstants.TYPE_PUBREC
         self.topic_id = 0
         self.message_id = 0
     
@@ -526,14 +604,8 @@ class PubRecPacket:
     def get_length(self):
         return self.length
     
-    def set_length(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
     
     def get_topic_id(self):
         return self.topic_id
@@ -550,8 +622,8 @@ class PubRecPacket:
 class PubRelPacket:
     
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.length = 6
+        self.type = MqttSnConstants.TYPE_PUBREL
         self.topic_id = 0
         self.message_id = 0
     
@@ -575,14 +647,8 @@ class PubRelPacket:
     def get_length(self):
         return self.length
     
-    def setLength(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def setType(self, type):
-        self.type = type
     
     def get_topic_id(self):
         return self.topic_id
@@ -617,14 +683,8 @@ class RegackPacket:
     def get_length(self):
         return self.length
     
-    def set_length(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
     
     def get_topic_id(self):
         return self.topic_id
@@ -750,7 +810,19 @@ class SubAckPacket:
         self.topic_id = struct.unpack('>H', value[3:5])[0]
         self.message_id = struct.unpack('>H', value[5:7])[0]
         self.return_code = value[7]
-    
+
+    def encode(self):
+        self.length = 8  # SUBACK sempre 8 byte
+        return struct.pack(
+            '>BBBHHB',
+            self.length,
+            self.type,
+            self.flags,
+            self.topic_id,
+            self.message_id,
+            self.return_code
+        )
+            
     def get_length(self):
         return self.length
     
@@ -768,7 +840,19 @@ class SubAckPacket:
     
     def get_return_code(self):
         return self.return_code
+    
+    def set_message_id(self, value: int):
+        self.message_id = value
 
+    def set_topic_id(self, value: int):
+        self.topic_id = value
+
+    def set_flags(self, value = int):
+        self.flags = value
+
+    def set_return_code(self, value):
+        self.return_code = value
+                        
 class SubPacket:
     
     def __init__(self):
@@ -801,6 +885,40 @@ class SubPacket:
             raise MqttSnClientException(e)
         
         return bytes(buffer)
+
+    def decode(self, data: bytes):
+        try:
+            buffer = memoryview(data)
+
+            # lunghezza e tipo
+            self.length = buffer[0]
+            self.type = buffer[1]
+
+            if self.type != MqttSnConstants.TYPE_SUBSCRIBE:
+                raise MqttSnClientException(f"Invalid message type {self.type}, expected SUBSCRIBE")
+
+            # flags
+            self.flags = buffer[2]
+
+            # message id
+            self.message_id = struct.unpack_from(">H", buffer, 3)[0]
+
+            # calcolo campo rimanente
+            remaining = self.length - 5  # già letti: len(1) + type(1) + flags(1) + msgId(2)
+
+            if remaining == 2:
+                # topic id
+                self.topic_id = struct.unpack_from(">H", buffer, 5)[0]
+                self.topic_name = None
+            elif remaining > 0:
+                # topic name
+                self.topic_name = bytes(buffer[5:5 + remaining])
+                self.topic_id = 0
+            else:
+                raise MqttSnClientException("Malformed SUBSCRIBE packet")
+
+        except Exception as e:
+            raise MqttSnClientException(e)
     
     def get_length(self):
         return self.length
@@ -841,10 +959,19 @@ class SubPacket:
         self.topicName = None
         self.topic_id = value
 
+    def get_dup(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_DUP)
+
+    def get_qos(self) -> int:
+        return (self.flags & MqttSnConstants.FLAG_QOS_MASK) >> 5
+
+    def get_topic_type_id(self) -> int:
+        return (self.flags & 0x3)
+
 class UnsubackPacket:
     
     def __init__(self):
-        self.length = 0
+        self.length = 4
         self.type = MqttSnConstants.TYPE_UNSUBACK
         self.message_id = 0
     
@@ -854,15 +981,9 @@ class UnsubackPacket:
     def get_length(self):
         return self.length
     
-    def set_length(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
-    
+       
     def get_message_id(self):
         return self.message_id
     
@@ -958,6 +1079,25 @@ class WillMessagePacket:
         except Exception as e:
             raise MqttSnClientException(e)
 
+
+    def decode(self, data: bytes):
+        try:
+            if len(data) < 2:
+                raise MqttSnClientException("Invalid WILLMSG packet: too short")
+
+            # primi 2 byte: length e type
+            self.length, self.type = struct.unpack(">BB", data[:2])
+
+            if self.length != len(data):
+                raise MqttSnClientException(
+                    f"Invalid length: expected {self.length}, got {len(data)}"
+                )
+
+            # il resto è il messaggio
+            self.message = data[2:]
+        except Exception as e:
+            raise MqttSnClientException(e)
+            
     def get_type(self):
         return self.type
 
@@ -976,8 +1116,8 @@ class WillMessagePacket:
 class WillMessageReqPacket:
     
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.type = MqttSnConstants.TYPE_WILLMSGREQ
+        self.length = 2
     
     def decode(self, value):
         self.length = value[0]
@@ -995,20 +1135,14 @@ class WillMessageReqPacket:
     def get_length(self):
         return self.length
     
-    def set_length(self, length):
-        self.length = length
-    
     def get_type(self):
         return self.type
-    
-    def set_type(self, type):
-        self.type = type
 
 class WillMessageRespPacket:
     
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.length = 4
+        self.type = MqttSnConstants.TYPE_WILLMSGRESP
         self.return_code = 0
     
     def decode(self, value):
@@ -1079,6 +1213,24 @@ class WillTopicPacket:
         except Exception as e:
             raise MqttSnClientException(e)
 
+    def decode(self, data: bytes):
+        try:
+            if len(data) < 3:
+                raise MqttSnClientException("Invalid WILLTOPIC packet: too short")
+
+            # primi 3 byte: length, type, flags
+            self.length, self.type, self.flags = struct.unpack(">BBB", data[:3])
+
+            if self.length != len(data):
+                raise MqttSnClientException(
+                    f"Invalid length: expected {self.length}, got {len(data)}"
+                )
+
+            # resto: topic name
+            self.topic_name = data[3:]
+        except Exception as e:
+            raise MqttSnClientException(e)
+
     def get_length(self):
         return self.length
 
@@ -1100,6 +1252,12 @@ class WillTopicPacket:
             raise MqttSnClientException(f"Will Topic Name '{value}' is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH})")
         self.topic_name = value.encode()
 
+    def get_qos(self) -> int:
+        return (self.flags & MqttSnConstants.FLAG_QOS_MASK) >> 5
+
+    def get_retain(self) -> bool:
+        return bool(self.flags & MqttSnConstants.FLAG_RETAIN)
+        
 class WillTopicReqPacket:
     def __init__(self):
         self.length = 2
@@ -1125,8 +1283,8 @@ class WillTopicReqPacket:
 class WillTopicResPacket:
     
     def __init__(self):
-        self.length = 0
-        self.type = 0
+        self.length = 4
+        self.type = MqttSnConstants.TYPE_WILLTOPICRESP
         self.return_code = 0
     
     def decode(self, value):

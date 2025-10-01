@@ -72,7 +72,7 @@ class MqttSnClient:
     port = MqttSnConstants.DEFAULT_PORT
     timeout = MqttSnConstants.DEFAULT_TIMEOUT
     keep_alive = MqttSnConstants.DEFAULT_KEEP_ALIVE
-    client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
+    client_id = None
     next_message_id = 1
     will_message = None
     will_topic = None
@@ -93,7 +93,8 @@ class MqttSnClient:
         self.port = MqttSnConstants.DEFAULT_PORT
         self.timeout = MqttSnConstants.DEFAULT_TIMEOUT
         self.keep_alive = MqttSnConstants.DEFAULT_KEEP_ALIVE
-        # self.client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
+        #self.client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
+        self.client_id = ""
         self.next_message_id = 1
         self.will_message = None
         self.will_topic = None
@@ -544,9 +545,11 @@ class MqttSnClient:
         
         flags = 0
         if self.clean_session:
+            self.logger.debug("clean session enabled")
             flags += MqttSnConstants.FLAG_CLEAN
         
         if self.will_topic is not None and self.will_message is not None:
+            self.logger.debug("LWT enabled")
             flags += MqttSnConstants.FLAG_WILL
         
         connect_packet.set_flags(flags)
@@ -695,6 +698,7 @@ class MqttSnClient:
         received = None
         
         try:
+            self.datagram_socket.settimeout(self.timeout)
             self.datagram_socket.setblocking(blocking)
             data, addr = self.datagram_socket.recvfrom(MqttSnConstants.MAX_PACKET_LENGTH_EXTENDED)
             self.last_receive = int(time.time())           
@@ -765,14 +769,15 @@ class MqttSnClient:
             if blocking == False:
                 running = False
             # Check for receive timeout
-            #if self.keep_alive > 0 and self.last_receive > 0 and (now - self.last_receive) >= (self.keep_alive * 1.5):
-            #    self.logger.warning("Keep alive error: timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
-            #    break
+            if self.keep_alive > 0 and self.last_receive > 0 and (now - self.last_receive) >= (self.keep_alive * 1.5):
+                self.logger.warning("Keep alive error: timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
+                break
             
             # Check if we have timed out waiting for the packet we are looking for
-            #if (now - started_waiting) >= self.timeout:
-            #    self.logger.warning("Timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
-            #    break
+            if (now - started_waiting) >= self.timeout:
+                self.logger.warning("Timed out while waiting for a '" + self.decode_type(msg_type) + "' from gateway.")
+                break
+
         if tmp_msg_type == msg_type:
             return buf            
         else:
@@ -816,36 +821,33 @@ class MqttSnClient:
         return out
     
     def set_client_id(self, value):
-        if value is None:
-           self.client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
-        else:
-            self.client_id = value
+        self.client_id = value
 
     def set_clean_session(self, value):
         self.clean_session = value
 
-    def set_will(self, topic, message, qos, retain):
+    def set_will(self, topic: str, message: str, qos: int, retain: bool):
         self.will_topic = topic
         self.will_qos = qos
         self.will_retain = retain
         self.will_message = message
 
-    def set_will_topic(self, value):
+    def set_will_topic(self, value: str):
         self.will_topic = value
 
-    def set_will_message(self, value):
+    def set_will_message(self, value: str):
         self.will_message = value
 
-    def set_will_qos(self, value):
+    def set_will_qos(self, value: int):
         self.will_qos = value
 
-    def set_will_retain(self, value):
+    def set_will_retain(self, value: bool):
         self.will_retain = value
 
-    def set_keep_alive(self, value):
+    def set_keep_alive(self, value: int):
         self.keep_alive = value
 
-    def set_timeout(self, value):
+    def set_timeout(self, value: int):
         self.timeout = value
         
     def polling(self):
@@ -929,6 +931,12 @@ class MqttSnClient:
         """
         Check if an MQTT topic matches a topic filter with wildcards (+, #).
         """
+        if topic is None:
+            raise MqttSnClientException("Parameter 'topic' is None.")
+
+        if topic_filter is None:
+            raise MqttSnClientException("Parameter 'topic_filter' is None.")
+            
         topic_levels = topic.split('/')
         filter_levels = topic_filter.split('/')
 

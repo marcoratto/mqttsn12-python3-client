@@ -62,7 +62,7 @@ def parse_args():
     parser.add_argument("-h", "--host",
                         default="127.0.0.1",
                         help="MQTT-SN host to connect to (default: 127.0.0.1)")
-    parser.add_argument("-i", "--clientid",
+    parser.add_argument("-i", "--clientid", type=str, default="mqtt-sn-python-" + str(os.getpid()),
                         help="Client ID to use. Defaults to 'mqtt-sn-python-' + pid")
     parser.add_argument("-I", "--id-prefix",
                         action="store_true",
@@ -100,7 +100,7 @@ def parse_args():
     parser.add_argument("--will-payload",
                         help="Payload for the client Will")
     parser.add_argument("--will-qos",
-                        type=int, choices=[-1, 0, 1], default=0,
+                        type=int, choices=[0, 1], default=0,
                         help="QoS level for the client Will. Default: 0")
     parser.add_argument("--will-retain",
                         action="store_true", default=False,
@@ -126,10 +126,6 @@ def parse_args():
         parser.print_help(sys.stderr)
         sys.exit(1)
 
-    # Default clientid se non fornito
-    if not args.clientid:
-        args.clientid = "mqtt-sn-python-" + str(os.getpid())
-
     return args
 
 def main():
@@ -150,14 +146,15 @@ def main():
         mqttsn_client.set_keep_alive(args.keepalive)
     if args.timeout:
         mqttsn_client.set_timeout(args.timeout)
+
     if args.will_topic:
         mqttsn_client.set_will_topic(args.will_topic)
     if args.will_payload:
-        mqttsn_client.set_will_topic(args.will_payload)
+        mqttsn_client.set_will_message(args.will_payload)
     if args.will_qos:
-        mqttsn_client.set_will_topic(args.will_qos)
+        mqttsn_client.set_will_qos(args.will_qos)
     if args.will_retain:
-        mqttsn_client.set_will_topic(args.will_retain)
+        mqttsn_client.set_will_retain(args.will_retain)
     
     message = None
        

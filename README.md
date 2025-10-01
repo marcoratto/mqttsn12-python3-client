@@ -59,7 +59,7 @@ options:
   --timeout TIMEOUT     Timeout (default: 60)
   --will-payload WILL_PAYLOAD
                         Payload for the client Will
-  --will-qos {-1,0,1}   QoS level for the client Will. Default: 0
+  --will-qos {0,1}      QoS level for the client Will. Default: 0
   --will-retain         Make the client Will retained
   --will-topic WILL_TOPIC
                         The topic on which to publish the client Will
@@ -91,7 +91,7 @@ options:
   -C, --msg-count MSG_COUNT
                         disconnect and exit after receiving the 'msg_count' messages.
   -1, --one             exit after receiving a single message.
-  -q, --qos {-1,0,1}    Quality of Service (-1, 0, 1). Default: 0
+  -q, --qos {0,1}       Quality of Service (0, 1). Default: 0
   -s, --stdin-message   Read one whole message from STDIN
   -T, --topicid TOPICID
                         Pre-defined MQTT-SN topic ID to publish to
@@ -112,13 +112,13 @@ The following table summarizes the code coverage of the library:
 |--------------------------------------------- | -------: | -------: | ------: |
 | src/mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
 | src/mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
-| src/mqttsn12/client/MqttSnClient.py          |      646 |      106 |     84% |
+| src/mqttsn12/client/MqttSnClient.py          |      658 |      112 |     83% |
 | src/mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
 | src/mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
-| src/mqttsn12/packets.py                      |      857 |      249 |     71% |
+| src/mqttsn12/packets.py                      |      948 |      324 |     66% |
 | tests/unit\_test\_publisher.py               |      113 |        1 |     99% |
 | tests/unit\_test\_subscriber.py              |      280 |       20 |     93% |
-|                                    **TOTAL** | **1969** |  **384** | **80%** |
+|                                    **TOTAL** | **2072** |  **465** | **78%** |
 
 ## Message Types
 
