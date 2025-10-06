@@ -62,8 +62,61 @@ from mqttsn12.packets import (
     WillTopicUpdateReqPacket
 )
 
+#!/usr/bin/env python3
+
+class MqttSnMessage:
+    
+    def __init__(self, topic_id=0, topic_name="", qos=0, retain=False, payload=b""):
+        self.topic_id = topic_id
+        self.topic_name = topic_name
+        self.qos = qos
+        self.retain = retain
+        self.payload = payload
+
+    # Getter e Setter per topic_id
+    def get_topic_id(self):
+        return self.topic_id
+
+    def set_topic_id(self, value):
+        self.topic_id = value
+
+    # Getter e Setter per topic_name
+    def get_topic_name(self):
+        return self.topic_name
+
+    def set_topic_name(self, value):
+        self.topic_name = value
+
+    # Getter e Setter per qos
+    def get_qos(self):
+        return self.qos
+
+    def set_qos(self, value):
+        self.qos = value
+
+    # Getter e Setter per retain
+    def get_retain(self):
+        return self.retain
+
+    def set_retain(self, value: bool):
+        self.retain = value
+
+    # Getter e Setter per payload
+    def get_payload(self):
+        return self.payload
+
+    def set_payload(self, value):
+        if not isinstance(value, (bytes, bytearray)):
+            raise MqttSnClientException("Payload must to be bytes or bytearray!")
+        self.payload = value
+
+    def __str__(self):
+        return (f"MqttSnMessage(topic_id={self.topic_id}, "
+                f"topic_name='{self.topic_name}', qos={self.qos}, "
+                f"retain={self.retain}, payload={self.payload})")
+
 class MqttSnListener:
-    def message_arrived(self, topic_id: int, topic_name: str, data: bytes) -> None:
+    def message_arrived(self, msg: MqttSnMessage) -> None:
         """Callback interface for received messages"""
         pass
                 
@@ -93,7 +146,6 @@ class MqttSnClient:
         self.port = MqttSnConstants.DEFAULT_PORT
         self.timeout = MqttSnConstants.DEFAULT_TIMEOUT
         self.keep_alive = MqttSnConstants.DEFAULT_KEEP_ALIVE
-        #self.client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
         self.client_id = ""
         self.next_message_id = 1
         self.will_message = None
@@ -800,9 +852,9 @@ class MqttSnClient:
     def send_ping_req(self):
         ping_req_packet = PingReqPacket()
         self.send_packet(ping_req_packet.encode())
-        buffer = self.wait_for(True, MqttSnConstants.TYPE_PINGRESP)
+        buf = self.wait_for(True, MqttSnConstants.TYPE_PINGRESP)
         packet = PingResPacket()
-        packet.decode(buffer)
+        packet.decode(buf)
 
     def get_qos_flag(self, qos):
         out = 0
@@ -820,10 +872,17 @@ class MqttSnClient:
         self.logger.debug(f"QOS:{out}")
         return out
     
-    def set_client_id(self, value):
+    def set_client_id(self, value: str):
+        if value is None:
+            self.client_id = f"mqtt-sn-python-{random.randint(0, 0xffff)}"
+        else:
+            if len(value) < 1:
+                raise MqttSnClientException("client_id not valid. Too short.")      
+            if len(value) > MqttSnConstants.MAX_CLIENT_ID_LENGTH:
+                raise MqttSnClientException("client_id not valid! Too long.")       
         self.client_id = value
 
-    def set_clean_session(self, value):
+    def set_clean_session(self, value: bool):
         self.clean_session = value
 
     def set_will(self, topic: str, message: str, qos: int, retain: bool):
@@ -859,7 +918,8 @@ class MqttSnClient:
             if publish_packet.get_type() != MqttSnConstants.TYPE_PUBLISH:
                 raise MqttSnClientException("Was expecting PUBLISH packet but received: " + self.decode_type(publish_packet.get_type()))
             
-            packet_qos = publish_packet.get_flags() & MqttSnConstants.FLAG_QOS_MASK
+            packet_retain = publish_packet.get_retain()
+            packet_qos = publish_packet.get_qos()
             if packet_qos == MqttSnConstants.FLAG_QOS_1:
                 self.send_puback(publish_packet, MqttSnConstants.ACCEPTED)
             
@@ -884,10 +944,22 @@ class MqttSnClient:
                 for filter_name, callback in self.list_of_mqtt_sn_callback.items():
                     if self.is_matched(topic_name, filter_name):
                         self.logger.debug("Found listener for topicID=" + str(topic_id) + ",topic name=" + str(topic_name) + ", topic filter=" + filter_name)
-                        callback.message_arrived(topic_id, topic_name, payload)
+                        msg = MqttSnMessage()
+                        msg.set_topic_id(topic_id)
+                        msg.set_topic_name(topic_name)
+                        msg.set_qos(packet_qos)
+                        msg.set_retain(packet_retain)     
+                        msg.set_payload(payload)                   
+                        callback.message_arrived(msg)
             else:
                 self.logger.debug("Callback...")
-                mqtt_sn_callback.message_arrived(topic_id, topic_name, payload)
+                msg = MqttSnMessage()
+                msg.set_topic_id(topic_id)
+                msg.set_topic_name(topic_name)
+                msg.set_qos(packet_qos)
+                msg.set_retain(packet_retain)       
+                msg.set_payload(payload)                  
+                mqtt_sn_callback.message_arrived(msg)
 
     def register_topic(self, topic_id, topic_name):
         

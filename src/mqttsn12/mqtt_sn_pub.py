@@ -99,6 +99,8 @@ def parse_args():
                         help="Timeout (default: 60)")
     parser.add_argument("--will-payload",
                         help="Payload for the client Will")
+    parser.add_argument("--will-payload-file",
+                        help="Payload for the client Will loaded from a file")                        
     parser.add_argument("--will-qos",
                         type=int, choices=[0, 1], default=0,
                         help="QoS level for the client Will. Default: 0")
@@ -155,6 +157,11 @@ def main():
         mqttsn_client.set_will_qos(args.will_qos)
     if args.will_retain:
         mqttsn_client.set_will_retain(args.will_retain)
+
+    if args.will_payload_file:
+        with open(args.will_payload_file, "r", encoding="utf-8") as f:
+            will_message = f.read()  
+            mqttsn_client.set_will_message(will_message)
     
     message = None
        

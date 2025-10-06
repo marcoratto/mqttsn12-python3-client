@@ -277,13 +277,18 @@ class GatewayInfoPacket:
 
 class PingReqPacket:
     
-    def __init__(self):
-        self.length = 2
+    def __init__(self, client_id=None):
         self.type = MqttSnConstants.TYPE_PINGREQ
+        self.client_id = ""
+        self.length = 0
     
     def encode(self):
+        # length = 2 (header) + len(client_id) se presente
+        self.length = 2 + len(self.client_id.encode("utf-8"))       
         try:
             buffer = struct.pack('BB', self.length, self.type)
+            if self.client_id:
+                buffer += self.client_id.encode("utf-8")
             return buffer
         except Exception as e:
             raise MqttSnClientException(e)
@@ -291,12 +296,27 @@ class PingReqPacket:
     def decode(self, value):
         self.length = value[0]
         self.type = value[1]
+        if self.length > 2:
+            self.client_id = value[2:].decode("utf-8")
+        else:
+            self.client_id = ""
     
     def get_length(self):
         return self.length
     
     def get_type(self):
         return self.type
+    
+    def get_client_id(self):
+        return self.client_id
+
+    def set_client_id(self, value):
+        if value is None:
+            self.client_id = ""
+        else:
+            if len(value.strip()) > MqttSnConstants.MAX_CLIENT_ID_LENGTH:
+                raise MqttSnClientException(f"Client ID '{value}' is too long (max {MqttSnConstants.MAX_CLIENT_ID_LENGTH})")        
+            self.client_id = value.strip().encode('utf-8')
 
 class PingResPacket:
     
@@ -1060,58 +1080,88 @@ class UnsubscribePacket:
     def set_topic_id(self, value):
         self.topic_id = value
 
+
 class WillMessagePacket:
-    
     def __init__(self):
         self.length = 0
         self.type = MqttSnConstants.TYPE_WILLMSG
         self.message = b''
+        self.extended = False
+        self.length_extended = 0
+
+    def set_message(self, value: str):
+        value = value.strip()
+        encoded = value.encode()
+        if len(encoded) > MqttSnConstants.MAX_PAYLOAD_LENGTH_EXTENDED:
+            raise MqttSnClientException(
+                f"Will Message '{value}' is too long "
+                f"(max {MqttSnConstants.MAX_PAYLOAD_LENGTH_EXTENDED})"
+            )
+        self.message = encoded
+        # Decide se usare formato esteso
+        self.extended = (len(encoded) + 2) > 255  # Length + Type + Msg
 
     def encode(self) -> bytes:
-        if self.message is None:
+        if not self.message:
             raise MqttSnClientException("Message not set")
-        self.length = 2 + len(self.message)
-        try:
-            return struct.pack(f'>BB{len(self.message)}s',
-                               self.length,
-                               self.type,
-                               self.message)
-        except Exception as e:
-            raise MqttSnClientException(e)
 
+        buffer = bytearray()
+
+        if self.extended:
+            # formato esteso: [0x01][len_hi][len_lo][type][message...]
+            total_len = 3 + 1 + len(self.message)  # 3-byte length + type + message
+            buffer.append(0x01)
+            buffer.extend(struct.pack(">H", total_len))
+        else:
+            # formato corto: [len][type][message...]
+            total_len = 2 + len(self.message)
+            buffer.append(total_len)
+
+        buffer.append(self.type)
+        buffer.extend(self.message)
+
+        return bytes(buffer)
 
     def decode(self, data: bytes):
-        try:
-            if len(data) < 2:
-                raise MqttSnClientException("Invalid WILLMSG packet: too short")
+        if len(data) < 2:
+            raise MqttSnClientException("Invalid WILLMSG packet: too short")
 
-            # primi 2 byte: length e type
-            self.length, self.type = struct.unpack(">BB", data[:2])
+        offset = 0
+        self.extended = (data[0] == 0x01)
+
+        if self.extended:
+            if len(data) < 4:
+                raise MqttSnClientException("Invalid extended WILLMSG packet: too short")
+
+            self.length = 1
+            self.length_extended = struct.unpack(">H", data[1:3])[0]
+            self.type = data[3]
+            offset = 4
+
+            if self.length_extended != len(data):
+                raise MqttSnClientException(
+                    f"Invalid extended length: expected {self.length_extended}, got {len(data)}"
+                )
+        else:
+            self.length = data[0]
+            self.type = data[1]
+            offset = 2
 
             if self.length != len(data):
                 raise MqttSnClientException(
                     f"Invalid length: expected {self.length}, got {len(data)}"
                 )
 
-            # il resto è il messaggio
-            self.message = data[2:]
-        except Exception as e:
-            raise MqttSnClientException(e)
-            
-    def get_type(self):
-        return self.type
-
-    def get_length(self):
-        return self.length
+        self.message = data[offset:]
 
     def get_message(self) -> str:
         return self.message.decode()
 
-    def set_message(self, value: str):
-        value = value.strip()
-        if len(value) > MqttSnConstants.MAX_PAYLOAD_LENGTH:
-            raise MqttSnClientException(f"Will Message '{value}' is too long (max {MqttSnConstants.MAX_PAYLOAD_LENGTH})")
-        self.message = value.encode()
+    def get_length(self):
+        return self.length_extended if self.extended else self.length
+
+    def get_type(self):
+        return self.type
 
 class WillMessageReqPacket:
     

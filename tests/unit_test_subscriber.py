@@ -29,7 +29,7 @@ from logging.handlers import TimedRotatingFileHandler
 import paho.mqtt.client as mqtt
 
 from mqttsn12.MqttSnConstants import MqttSnConstants
-from mqttsn12.client.MqttSnClient import MqttSnClient, MqttSnListener
+from mqttsn12.client.MqttSnClient import MqttSnClient, MqttSnListener, MqttSnMessage
 from mqttsn12.client.MqttSnClientException import MqttSnClientException
 from mqttsn12.packets import *
 
@@ -49,11 +49,11 @@ actual = None
 keep_running = True
 
 class MyListener(MqttSnListener):
-    def message_arrived(self, topic_id: int, topic_name: str, data: bytes) -> None:
+    def message_arrived(self, msg: MqttSnMessage) -> None:
         global actual
         global keep_running
-        actual = data.decode("utf-8")
-        print(f"Messaggio ricevuto su {topic_name} (ID={topic_id}): {actual}")
+        logging.debug(f"MqttSnMessage: {msg}")
+        actual = msg.get_payload().decode()
         keep_running = False
 
 class TestSubscriber(unittest.TestCase):
@@ -357,7 +357,7 @@ class TestSubscriber(unittest.TestCase):
         print("test_will_message_update")
 
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
-        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_0, True)
+        self.mqttsn_client.set_will("mqttsn/test_will_message_update/status", "offline_ko", MqttSnConstants.QOS_0, True)
         self.mqttsn_client.send_connect()
         self.mqttsn_client.send_will_message_update("off_ko")
         time.sleep(3)
@@ -371,9 +371,28 @@ class TestSubscriber(unittest.TestCase):
         self.mqttsn_client.set_will_message("offline_ko")
         self.mqttsn_client.set_will_qos(MqttSnConstants.QOS_0)
         self.mqttsn_client.set_will_retain(True)
-        self.mqttsn_client.set_will_topic("mqttsn/lwt/status")
+        self.mqttsn_client.set_will_topic("mqttsn/test_lwt_2/status")
         self.mqttsn_client.send_connect()
         time.sleep(3)
+        
+    def test_lwt_long_payload(self):
+        global keep_running
+        global actual
+        print("test_lwt_long_payload")
+
+        parts = []
+        for _ in range(100):
+            parts.append("sub_big_payload " + str(random.randint(0, 0xFFFF)))
+
+        will_message = ''.join(parts)
+
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.set_will_message(will_message)
+        self.mqttsn_client.set_will_qos(MqttSnConstants.QOS_0)
+        self.mqttsn_client.set_will_retain(True)
+        self.mqttsn_client.set_will_topic("mqttsn/test_lwt_long_payload/status")
+        self.mqttsn_client.send_connect()
+        time.sleep(3)        
 
     def test_update_lwt_topic(self):
         global keep_running
@@ -381,9 +400,9 @@ class TestSubscriber(unittest.TestCase):
         print("test_update_lwt_topic")
         
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
-        self.mqttsn_client.set_will("mqttsn/lwt/status", "offline_ko", MqttSnConstants.QOS_0, True)
+        self.mqttsn_client.set_will("mqttsn/test_update_lwt_topic/status", "offline_ko", MqttSnConstants.QOS_0, True)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_will_topic_update("mqttsn/lwt/state")
+        self.mqttsn_client.send_will_topic_update("mqttsn/test_update_lwt_topic/state")
         time.sleep(3)
         #self.mqttc.disconnect()
 
@@ -399,7 +418,7 @@ class TestSubscriber(unittest.TestCase):
         self.mqttsn_client.set_keep_alive(keepalive)
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_subscribe("mqttsn/test/ping", 
+        self.mqttsn_client.send_subscribe("mqttsn/test_ping", 
                         MqttSnConstants.QOS_0, 
                         myListener)
 
@@ -419,7 +438,7 @@ class TestSubscriber(unittest.TestCase):
                 # presupponiamo che ci sia stato lo scambio PINGREQ/PINGRESP
                 if not published and elapsed > keepalive+1:
                     published = True                
-                    self.mqttc.publish("mqttsn/test/ping", expected, qos=0, retain=False)
+                    self.mqttc.publish("mqttsn/test_ping", expected, qos=0, retain=False)
                 
         except MqttSnClientException as e:
             print(e)
@@ -439,18 +458,18 @@ class TestSubscriber(unittest.TestCase):
         
         self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
         self.mqttsn_client.send_connect()
-        self.mqttsn_client.send_subscribe("mqttsn/test/sub/wildcard_hash/#", 
+        self.mqttsn_client.send_subscribe("mqttsn/test_sub_wildcard_hash/#", 
                         MqttSnConstants.QOS_0, 
                         myListener)
 
         actual = None
         expected = "test_sub_wildcard_hash_0"
         self.mqttc.loop_start()
-        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)
+        self.mqttc.publish("mqttsn/test_sub_wildcard_hash/0", expected, qos=1, retain=False)
         
         self.mqttsn_client.polling()
         
-        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/0", expected, qos=1, retain=False)        
+        self.mqttc.publish("mqttsn/test_sub_wildcard_hash/0", expected, qos=1, retain=False)        
         try:
             while actual is None:
                 self.mqttsn_client.polling()
@@ -462,11 +481,11 @@ class TestSubscriber(unittest.TestCase):
 
         actual = None
         expected = "test_sub_wildcard_hash_1"
-        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/1", expected, qos=1, retain=False)
+        self.mqttc.publish("mqttsn/test_sub_wildcard_hash/1", expected, qos=1, retain=False)
         
         self.mqttsn_client.polling()
         
-        self.mqttc.publish("mqttsn/test/sub/wildcard_hash/1", expected, qos=1, retain=False)
+        self.mqttc.publish("mqttsn/test_sub_wildcard_hash/1", expected, qos=1, retain=False)
         try:
             while actual is None:
                 self.mqttsn_client.polling()

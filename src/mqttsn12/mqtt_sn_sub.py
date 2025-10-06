@@ -27,7 +27,7 @@ import time
 import logging
 
 from mqttsn12.MqttSnConstants import MqttSnConstants
-from mqttsn12.client.MqttSnClient import MqttSnClient, MqttSnListener
+from mqttsn12.client.MqttSnClient import MqttSnClient, MqttSnListener, MqttSnMessage
 from mqttsn12.client.MqttSnClientException import MqttSnClientException
 from mqttsn12.packets import *
 
@@ -40,11 +40,11 @@ logging.basicConfig(
 )
 
 class MyListener(MqttSnListener):
-    def message_arrived(self, topic_id: int, topic_name: str, data: bytes) -> None:
+    def message_arrived(self, msg: MqttSnMessage) -> None:
         global keep_running
         global args
-        payload = data.decode()
-        logging.debug(f"Topic: {topic_name}, TopidID: (ID={topic_id})")
+        payload = msg.get_payload().decode()
+        logging.debug(f"MqttSnMessage: {msg}")
         print(payload)
         if args.one:
             keep_running=False
@@ -68,7 +68,7 @@ def parse_args():
     parser.add_argument("-h", "--host",
                         default="127.0.0.1",
                         help="MQTT-SN host to connect to (default: 127.0.0.1)")
-    parser.add_argument("-i", "--clientid",
+    parser.add_argument("-i", "--clientid", default="mqtt-sn-python-" + str(os.getpid()),
                         help="Client ID to use. Defaults to 'mqtt-sn-python-' + pid")
     parser.add_argument("-I", "--id-prefix",
                         action="store_true",
@@ -102,8 +102,10 @@ def parse_args():
                         help="Timeout (default: 60)")
     parser.add_argument("--will-payload",
                         help="Payload for the client Will")
+    parser.add_argument("--will-payload-file",
+                        help="Payload for the client Will loaded from a file")
     parser.add_argument("--will-qos",
-                        type=int, choices=[-1, 0, 1], default=0,
+                        type=int, choices=[0, 1], default=0,
                         help="QoS level for the client Will. Default: 0")
     parser.add_argument("--will-retain",
                         action="store_true", default=False,
@@ -122,10 +124,6 @@ def parse_args():
         # Se errore nei parametri obbligatori → mostra help completo
         parser.print_help(sys.stderr)
         sys.exit(1)
-
-    # Default clientid se non fornito
-    if not args.clientid:
-        args.clientid = "mqtt-sn-python-" + str(os.getpid())
 
     return args
 
@@ -159,7 +157,12 @@ def main():
         mqttsn_client.set_will_qos(args.will_qos)
     if args.will_retain:
         mqttsn_client.set_will_retain(args.will_retain)
-       
+
+    if args.will_payload_file:
+        with open(args.will_payload_file, "r", encoding="utf-8") as f:
+            will_message = f.read()  
+            mqttsn_client.set_will_message(will_message)
+        
     mqttsn_client.open(args.host, args.port)
 
     if args.qos >= 0:
