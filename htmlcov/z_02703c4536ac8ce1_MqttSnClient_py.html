@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_02703c4536ac8ce1_MqttSnClientException_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.10.6">coverage.py v7.10.6</a>,
-            created at 2025-10-06 12:05 +0200
+            created at 2025-10-07 12:29 +0200
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -487,8 +487,8 @@
     <p class="run"><span class="n"><a id="t405" href="#t405">405</a></span><span class="t">    <span class="key">def</span> <span class="nam">send_register</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">topic</span><span class="op">:</span> <span class="nam">str</span><span class="op">)</span> <span class="op">-></span> <span class="nam">int</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t406" href="#t406">406</a></span><span class="t">        <span class="str">"""Register topic name"""</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t407" href="#t407">407</a></span><span class="t">        <span class="nam">topic_name_len</span> <span class="op">=</span> <span class="nam">len</span><span class="op">(</span><span class="nam">topic</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t408" href="#t408">408</a></span><span class="t">        <span class="key">if</span> <span class="nam">topic_name_len</span> <span class="op">></span> <span class="nam">MqttSnConstants</span><span class="op">.</span><span class="nam">MAX_TOPIC_LENGTH</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t409" href="#t409">409</a></span><span class="t">            <span class="key">raise</span> <span class="nam">MqttSnClientException</span><span class="op">(</span><span class="str">"Topic name is too long"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t408" href="#t408">408</a></span><span class="t">        <span class="key">if</span> <span class="nam">topic_name_len</span> <span class="op">></span> <span class="nam">MqttSnConstants</span><span class="op">.</span><span class="nam">MAX_TOPIC_LENGTH_EXTENDED</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t409" href="#t409">409</a></span><span class="t">            <span class="key">raise</span> <span class="nam">MqttSnClientException</span><span class="op">(</span><span class="str">"Topic name is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED} bytes)"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t410" href="#t410">410</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t411" href="#t411">411</a></span><span class="t">        <span class="nam">packet</span> <span class="op">=</span> <span class="nam">RegisterPacket</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t412" href="#t412">412</a></span><span class="t">        <span class="nam">packet</span><span class="op">.</span><span class="nam">set_topic_id</span><span class="op">(</span><span class="num">0</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -1122,7 +1122,7 @@
             <a class="nav" href="z_02703c4536ac8ce1_MqttSnClientException_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.10.6">coverage.py v7.10.6</a>,
-            created at 2025-10-06 12:05 +0200
+            created at 2025-10-07 12:29 +0200
         </p>
     </div>
 </footer>

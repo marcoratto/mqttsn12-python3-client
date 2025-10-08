@@ -1,6 +1,6 @@
 [project]
 name = "mqtt-sn-12"
-version = "1.0.7"
+version = "1.0.8"
 description = "Client for protocol MQTT-SN 1.2"
 readme = "README.md"
 requires-python = ">=3.7"

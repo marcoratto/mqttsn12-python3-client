@@ -728,65 +728,109 @@ class RegisterPacket:
     
     def __init__(self):
         self.length = 0
+        self.length_extended = 0
+        self.extended = False
         self.topic_id = 0
         self.type = MqttSnConstants.TYPE_REGISTER
         self.message_id = 0
         self.topic_name = None
-    
+
     def encode(self):
         try:
-            self.length = 6 + len(self.topic_name)
+            if self.topic_name is None:
+                raise MqttSnClientException("Topic name cannot be None")
+
+            total_length = 6 + len(self.topic_name)
             buffer = bytearray()
-            
-            buffer.extend(struct.pack('!B', self.length))
+
+            # Determina se serve la lunghezza estesa
+            if total_length > MqttSnConstants.MAX_TOPIC_LENGTH:
+                self.extended = True
+                self.length_extended = total_length
+                # Lunghezza estesa: 0x01 + 2 byte lunghezza
+                buffer.extend(struct.pack('!BH', 0x01, self.length_extended))
+            else:
+                self.extended = False
+                self.length = total_length
+                buffer.extend(struct.pack('!B', self.length))
+
             buffer.extend(struct.pack('!B', self.type))
             buffer.extend(struct.pack('!H', self.topic_id))
             buffer.extend(struct.pack('!H', self.message_id))
             buffer.extend(self.topic_name)
-            
+
             return bytes(buffer)
         except Exception as e:
-            raise MqttSnClientException(e)
-    
+            raise MqttSnClientException(f"Error encoding RegisterPacket: {e}")
+
     def decode(self, value: bytes):
-        self.length = struct.unpack('!B', value[0:1])[0]
-        self.type = struct.unpack('!B', value[1:2])[0]
-        self.topic_id = struct.unpack('!H', value[2:4])[0]
-        self.message_id = struct.unpack('!H', value[4:6])[0]
-        
-        topic_name_length = self.length - 6
-        self.topic_name = value[6:6+topic_name_length]
-    
+        try:
+            if len(value) < 6:
+                raise MqttSnClientException("Invalid REGISTER packet: too short")
+
+            # Controlla se è un pacchetto esteso
+            if value[0] == 0x01:
+                self.extended = True
+                self.length_extended = struct.unpack('!H', value[1:3])[0]
+                offset = 3
+            else:
+                self.extended = False
+                self.length = struct.unpack('!B', value[0:1])[0]
+                offset = 1
+
+            self.type = struct.unpack('!B', value[offset:offset+1])[0]
+            self.topic_id = struct.unpack('!H', value[offset+1:offset+3])[0]
+            self.message_id = struct.unpack('!H', value[offset+3:offset+5])[0]
+
+            total_length = self.length_extended if self.extended else self.length
+            topic_name_length = total_length - (offset + 5)
+
+            if topic_name_length < 0 or (offset + 5 + topic_name_length) > len(value):
+                raise MqttSnClientException("Invalid REGISTER packet length")
+
+            self.topic_name = value[offset+5:offset+5+topic_name_length]
+        except Exception as e:
+            raise MqttSnClientException(f"Error decoding RegisterPacket: {e}")
+
     def get_length(self) -> int:
-        return self.length
-    
+        return self.length_extended if self.extended else self.length
+
     def get_type(self) -> int:
         return self.type
-    
+
     def get_topic_id(self) -> int:
         return self.topic_id
-    
+
     def set_topic_id(self, topic_id: int):
         self.topic_id = topic_id
-    
+
     def get_message_id(self) -> int:
         return self.message_id
-    
+
     def set_message_id(self, message_id: int):
         self.message_id = message_id
-    
+
     def get_topic_name(self) -> str:
+        if self.topic_name is None:
+            return None
         return self.topic_name.decode('utf-8')
-    
+
     def set_topic_name(self, value):
+        if value is None:
+            raise MqttSnClientException("Topic name cannot be None")
+        
         if isinstance(value, str):
+            if value is not None and len(value.strip()) > MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED:
+                raise MqttSnClientException(f"Payload '{value}' is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED})")
             if value is not None and len(value.strip()) > MqttSnConstants.MAX_TOPIC_LENGTH:
-                raise MqttSnClientException(f"Topic Name '{value}' is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH})")
+                self.extended = True
             self.topic_name = value.encode('utf-8')
-        elif isinstance(value, bytes):
+        else:
+            if value is not None and len(value) > MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED:
+                raise MqttSnClientException(f"Payload '{value}' is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED})")
             if value is not None and len(value) > MqttSnConstants.MAX_TOPIC_LENGTH:
-                raise MqttSnClientException(f"Topic Name '{value}' is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH})")
-            self.topic_name = value
+                self.extended = True
+            self.topic_name = bytes(value) if value is not None else None
 
 class SearchGatewayPacket:
     

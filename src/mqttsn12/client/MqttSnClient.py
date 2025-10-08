@@ -405,8 +405,8 @@ class MqttSnClient:
     def send_register(self, topic: str) -> int:
         """Register topic name"""
         topic_name_len = len(topic)
-        if topic_name_len > MqttSnConstants.MAX_TOPIC_LENGTH:
-            raise MqttSnClientException("Topic name is too long")
+        if topic_name_len > MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED:
+            raise MqttSnClientException("Topic name is too long (max {MqttSnConstants.MAX_TOPIC_LENGTH_EXTENDED} bytes)")
         
         packet = RegisterPacket()
         packet.set_topic_id(0)

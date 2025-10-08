@@ -214,6 +214,19 @@ class TestPublisher(unittest.TestCase):
                         "test_pub_predefined_retained", 
                         MqttSnConstants.QOS_N1, 
                         True);
-                        
+
+    def test_pub_long_topic_qos0(self):
+        print("test_pub_long_topic_qos0")
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_publish("mqttsn/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0/test_pub_long_topic_qos0", 
+                        "test_pub_long_topic_qos0", 
+                        MqttSnConstants.QOS_0, 
+                        False);
+
+        time.sleep(1)
+
+        self.mqttsn_client.send_disconnect(0)
+                                
 if __name__ == '__main__':
     unittest.main()
