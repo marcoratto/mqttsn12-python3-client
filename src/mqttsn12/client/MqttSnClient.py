@@ -460,8 +460,12 @@ class MqttSnClient:
         publish_packet.set_data(data)
         self.send_packet(publish_packet.encode())
         
-        if qos > 0:
+        if qos == MqttSnConstants.QOS_1:
             self.receive_puback()
+        elif qos == MqttSnConstants.QOS_2:
+            self.receive_pubrec()            
+            self.send_pubrel(publish_packet)            
+            self.receive_pubcomp()
         
     def receive_puback(self) -> int:
         """Receive PUBACK packet"""
@@ -489,6 +493,48 @@ class MqttSnClient:
         received_topic_id = puback_packet.get_topic_id()
         self.logger.debug(f"PUBACK topic id: {received_topic_id}")
         return received_topic_id
+
+    def receive_pubrec(self) -> int:
+        """Receive PUBREC packet"""
+        buffer = self.wait_for(True, MqttSnConstants.TYPE_PUBREC)
+        if buffer is None:
+            raise MqttSnClientException("Failed to receive PUBREC.")
+        
+        pubrec_packet = PubRecPacket()
+        pubrec_packet.decode(buffer)
+        
+        if pubrec_packet.get_type() != MqttSnConstants.TYPE_PUBREC:
+            raise MqttSnClientException(f"Was expecting PUBREC packet but received: {self.decode_type(pubrec_packet.get_type())}")
+        
+        received_message_id = pubrec_packet.get_message_id()
+        self.logger.debug(f"PUBREC message id: {received_message_id}")
+        if received_message_id != self.next_message_id - 1:
+            self.logger.warning("Message id in PUBREC does not equal message id sent")
+            self.logger.debug(f"Expecting: {self.next_message_id - 1}")
+            self.logger.debug(f"Actual: {received_message_id}")
+        
+        return received_message_id
+
+    def receive_pubcomp(self) -> int:
+        """Receive PUBCOMP packet"""
+        buffer = self.wait_for(True, MqttSnConstants.TYPE_PUBCOMP)
+        if buffer is None:
+            raise MqttSnClientException("Failed to receive PUBCOMP.")
+        
+        pubcomp_packet = PubCompPacket()
+        pubcomp_packet.decode(buffer)
+        
+        if pubcomp_packet.get_type() != MqttSnConstants.TYPE_PUBCOMP:
+            raise MqttSnClientException(f"Was expecting PUBCOMP packet but received: {self.decode_type(pubcomp_packet.get_type())}")
+        
+        received_message_id = pubcomp_packet.get_message_id()
+        self.logger.debug(f"PUBCOMP message id: {received_message_id}")
+        if received_message_id != self.next_message_id - 1:
+            self.logger.warning("Message id in PUBCOMP does not equal message id sent")
+            self.logger.debug(f"Expecting: {self.next_message_id - 1}")
+            self.logger.debug(f"Actual: {received_message_id}")
+        
+        return received_message_id
     
     def receive_suback(self) -> int:
         """Receive SUBACK packet"""
@@ -543,6 +589,13 @@ class MqttSnClient:
         puback.set_return_code(return_code)
         self.logger.debug("Sending PUBACK packet...")
         self.send_packet(puback.encode())
+
+    def send_pubrel(self, publish: PublishPacket) -> None:
+        """Send PUBREL packet"""
+        pubrel = PubRelPacket()
+        pubrel.set_message_id(publish.get_message_id())
+        self.logger.debug("Sending PUBREL packet...")
+        self.send_packet(pubrel.encode())
     
     def receive_regack(self) -> int:
         """Receive REGACK packet"""
@@ -865,7 +918,7 @@ class MqttSnClient:
         elif qos == MqttSnConstants.QOS_1:
             out = MqttSnConstants.FLAG_QOS_1
         elif qos == MqttSnConstants.QOS_2:
-            raise MqttSnClientException(f"QOS={qos} not supported")
+            out = MqttSnConstants.FLAG_QOS_2
         else:
             raise MqttSnClientException(f"QOS={qos} not valid")
         

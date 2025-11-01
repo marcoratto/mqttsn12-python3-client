@@ -83,8 +83,8 @@ def parse_args():
                         type=int, default=2442,
                         help="Network port (default: 2442)")
     parser.add_argument("-q", "--qos",
-                        type=int, choices=[-1, 0, 1], default=0,
-                        help="Quality of Service (-1, 0, 1). Default: 0")
+                        type=int, choices=[-1, 0, 1, 2], default=0,
+                        help="Quality of Service (0,1,2 or -1). Default: 0")
     parser.add_argument("-r", "--retain",
                         action="store_true", default=False,
                         help="Mark the message as retained")

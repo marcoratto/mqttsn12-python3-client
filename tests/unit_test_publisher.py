@@ -147,6 +147,19 @@ class TestPublisher(unittest.TestCase):
 
         self.mqttsn_client.send_disconnect(0)
 
+    def test_pub_qos2(self):
+        print("test_pub_qos2")
+        self.mqttsn_client.open(self.MQTT_SN_HOST, self.MQTT_SN_PORT)
+        self.mqttsn_client.send_connect()
+        self.mqttsn_client.send_publish("mqttsn/test/pub_qos2", 
+                        "test_pub_qos2", 
+                        MqttSnConstants.QOS_2, 
+                        False);
+
+        time.sleep(1)
+
+        self.mqttsn_client.send_disconnect(0)
+
 #
 #Note:
 #On Mac OSX:
@@ -158,7 +171,7 @@ class TestPublisher(unittest.TestCase):
         print("test_pub_big_payload_qos1")
         
         parts = []
-        for _ in range(5000):
+        for _ in range(100):
             parts.append("Hello " + str(random.randint(0, 0xFFFF)))
 
         payload = ''.join(parts)

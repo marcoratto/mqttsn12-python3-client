@@ -26,7 +26,7 @@ Execute the publisher client tool
 Execute the subscriber client tool
 `mqtt_sn_sub`
 
-## mqtt_sn_pub 
+## Publisher tool
 
 ```
 usage: mqtt_sn_pub [opts] -t <topic> -m <message>
@@ -35,9 +35,12 @@ MQTT-SN publisher in Python
 
 options:
   -t, --topic TOPIC     MQTT-SN topic name to publish to
+  -m, --message MESSAGE
+                        Message payload to send
   -d, --enable-debug    Enable debug messages
   -c, --disable-clean-session
                         Disable clean session / enable persistent client mode
+  -f, --file FILE       A file to send as the message payload
   -h, --host HOST       MQTT-SN host to connect to (default: 127.0.0.1)
   -i, --clientid CLIENTID
                         Client ID to use. Defaults to 'mqtt-sn-python-' + pid
@@ -45,11 +48,11 @@ options:
   -k, --keepalive KEEPALIVE
                         Keep alive in seconds (default: 30)
   -e, --sleep SLEEP     Sleep duration in seconds when disconnecting (default: 0)
+  -l, --line-mode       Read messages from stdin, sending a separate message for each line
+  -n, --null-message    Send a null (zero length) message
   -p, --port PORT       Network port (default: 2442)
-  -C, --msg-count MSG_COUNT
-                        disconnect and exit after receiving the 'msg_count' messages.
-  -1, --one             exit after receiving a single message.
-  -q, --qos {0,1}       Quality of Service (0, 1). Default: 0
+  -q, --qos {-1,0,1,2}  Quality of Service (0,1,2 or -1). Default: 0
+  -r, --retain          Mark the message as retained
   -s, --stdin-message   Read one whole message from STDIN
   -T, --topicid TOPICID
                         Pre-defined MQTT-SN topic ID to publish to
@@ -62,9 +65,12 @@ options:
   --will-retain         Make the client Will retained
   --will-topic WILL_TOPIC
                         The topic on which to publish the client Will
+  --repeat REPEAT       Repeat publish N times (default: 1)
+  --repeat-delay REPEAT_DELAY
+                        Delay in seconds between repeats (default: 0)
 ``` 
 
-## mqtt_sn_sub
+## Subscriber tool
 
 ```
 usage: mqtt_sn_pub [opts] -t <topic> -m <message>
@@ -116,13 +122,13 @@ The following table summarizes the code coverage of the library:
 |--------------------------------------------- | -------: | -------: | ------: |
 | src/mqttsn12/MqttSnConstants.py              |       61 |        0 |    100% |
 | src/mqttsn12/\_\_init\_\_.py                 |        0 |        0 |    100% |
-| src/mqttsn12/client/MqttSnClient.py          |      708 |      126 |     82% |
+| src/mqttsn12/client/MqttSnClient.py          |      747 |      131 |     82% |
 | src/mqttsn12/client/MqttSnClientException.py |       12 |        8 |     33% |
 | src/mqttsn12/client/\_\_init\_\_.py          |        0 |        0 |    100% |
-| src/mqttsn12/packets.py                      |     1013 |      363 |     64% |
-| tests/unit\_test\_publisher.py               |      120 |        1 |     99% |
+| src/mqttsn12/packets.py                      |      992 |      321 |     68% |
+| tests/unit\_test\_publisher.py               |      127 |        1 |     99% |
 | tests/unit\_test\_subscriber.py              |      293 |       20 |     93% |
-|                                    **TOTAL** | **2207** |  **518** | **77%** |
+|                                    **TOTAL** | **2232** |  **481** | **78%** |
 
 ## Message Types
 
@@ -144,9 +150,9 @@ Below you can find the list of the Message Type implemented:
 |0x0B|REGACK|Implemented||
 |0x0C|PUBLISH|Implemented||
 |0x0D|PUBACK|Implemented||
-|0x0E|PUBCOMP|NA||
-|0x0F|PUBREC|NA||
-|0x10|PUBREL|NA||
+|0x0E|PUBCOMP|Implemented||
+|0x0F|PUBREC|Implemented||
+|0x10|PUBREL|Implemented||
 |0x11|reserved|NA||
 |0x12|SUBSCRIBE|Implemented||
 |0x13|SUBACK|Implemented||

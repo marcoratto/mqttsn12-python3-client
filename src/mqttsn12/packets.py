@@ -395,24 +395,21 @@ class PubAckPacket:
 class PubCompPacket:
     
     def __init__(self):
-        self.length = 6
+        self.length = 4
         self.type = MqttSnConstants.TYPE_PUBCOMP
-        self.topic_id = 0
         self.message_id = 0
     
     def decode(self, value):
         self.length = value[0]
         self.type = value[1]
-        self.topic_id = struct.unpack('>H', value[2:4])[0]
-        self.message_id = struct.unpack('>H', value[4:6])[0]
-    
+        self.message_id = struct.unpack('>H', value[2:4])[0]
+  
     def encode(self):
         try:
             buffer = bytearray(self.length)
             buffer[0] = self.length
             buffer[1] = self.type
-            struct.pack_into('>H', buffer, 2, self.topic_id)
-            struct.pack_into('>H', buffer, 4, self.message_id)
+            struct.pack_into('>H', buffer, 2, self.message_id)
             return bytes(buffer)
         except Exception as e:
             raise MqttSnClientException(str(e))
@@ -422,12 +419,6 @@ class PubCompPacket:
     
     def get_type(self):
         return self.type
-    
-    def get_topic_id(self):
-        return self.topic_id
-    
-    def set_topic_id(self, topic_id):
-        self.topic_id = topic_id
     
     def get_message_id(self):
         return self.message_id
@@ -599,23 +590,20 @@ class PublishPacket:
 
 class PubRecPacket:
     def __init__(self):
-        self.length = 6
+        self.length = 4
         self.type = MqttSnConstants.TYPE_PUBREC
-        self.topic_id = 0
         self.message_id = 0
     
     def decode(self, value):
         self.length = value[0]
         self.type = value[1]
-        self.topic_id = struct.unpack('>H', value[2:4])[0]
-        self.message_id = struct.unpack('>H', value[4:6])[0]
+        self.message_id = struct.unpack('>H', value[2:4])[0]
     
     def encode(self):
         try:
             buffer = bytearray()
             buffer.append(self.length)
             buffer.append(self.type)
-            buffer.extend(struct.pack('>H', self.topic_id))
             buffer.extend(struct.pack('>H', self.message_id))
             return bytes(buffer)
         except Exception as e:
@@ -626,13 +614,7 @@ class PubRecPacket:
     
     def get_type(self):
         return self.type
-    
-    def get_topic_id(self):
-        return self.topic_id
-    
-    def set_topic_id(self, topic_id):
-        self.topic_id = topic_id
-    
+       
     def get_message_id(self):
         return self.message_id
     
@@ -642,23 +624,20 @@ class PubRecPacket:
 class PubRelPacket:
     
     def __init__(self):
-        self.length = 6
+        self.length = 4
         self.type = MqttSnConstants.TYPE_PUBREL
-        self.topic_id = 0
         self.message_id = 0
     
     def decode(self, value):
         self.length = value[0]
         self.type = value[1]
-        self.topic_id = struct.unpack('>H', value[2:4])[0]
-        self.message_id = struct.unpack('>H', value[4:6])[0]
-    
+        self.message_id = struct.unpack('>H', value[2:4])[0]
+   
     def encode(self):
         try:
             buffer = bytearray()
             buffer.append(self.length)
             buffer.append(self.type)
-            buffer.extend(struct.pack('>H', self.topic_id))
             buffer.extend(struct.pack('>H', self.message_id))
             return bytes(buffer)
         except Exception as e:
@@ -669,18 +648,12 @@ class PubRelPacket:
     
     def get_type(self):
         return self.type
-    
-    def get_topic_id(self):
-        return self.topic_id
-    
-    def set_topic_id(self, topic_id):
-        self.topic_id = topic_id
-    
+       
     def get_message_id(self):
         return self.message_id
     
-    def setmessage_id(self, message_id):
-        self.message_id = message_id
+    def set_message_id(self, value):
+        self.message_id = value
 
 class RegackPacket:
     
